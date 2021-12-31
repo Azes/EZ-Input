@@ -138,7 +138,7 @@ public class EZ : MonoBehaviour
      * Would you have wanted to write it all down, I don't think so
      * ;) 
      * written by AzeS 
-     * v 1.2
+     * v 1.3
      */
     AzeSCon a;
 
@@ -156,13 +156,19 @@ public class EZ : MonoBehaviour
 
     //Mouse Var´s
     static bool isMouseLeft, isMouseRight, isMouseMiddel, MouseLeft_Down, MouseRight_Down, MouseMiddel_Down, MouseLeft_Up, MouseRight_Up, MouseMiddel_Up;
+    public static bool MouseBack, MouseForward;
+    public static Mouse _mouse;
     static Vector2 Mouse_Position, Mouse_Delta;
     static float Mouse_Wheel;
     static bool drag;
+    public static bool onMouse;
+    static int clicks;
 
     //Keyboard
     static Keyboard aKey;
     static bool kdown, kup;
+    public static float Horizontal, Vertical;
+    public static bool anykey;
 
 
     public bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false;
@@ -286,11 +292,26 @@ public class EZ : MonoBehaviour
         a.Mouse.Wheel.performed += ctx => Mouse_Wheel = ctx.ReadValue<float>();
         a.Mouse.Wheel.canceled += ctx => Mouse_Wheel = 0;
 
+        a.Mouse.MausEingabe.performed += ctx => onMouse = true;
+        a.Mouse.MausEingabe.canceled += ctx => onMouse = false;
+        a.Mouse.MausEingabe.started += ctx => clicks++;
+        a.Mouse.forword.performed += ctx => MouseForward = true;
+        a.Mouse.forword.canceled += ctx => MouseForward = false;
+        a.Mouse.back.performed += ctx => MouseBack = true;
+        a.Mouse.back.canceled += ctx => MouseBack = false;
+
+        _mouse = Mouse.current;
+
         a.Keyboard.TastenEingabe.performed += ctx => aKey = Keyboard.current;
+        a.Keyboard.TastenEingabe.performed += ctx => anykey = true;
         a.Keyboard.TastenEingabe.started += ctx => kdown = true;
         a.Keyboard.TastenEingabe.canceled += ctx => kup = true;
+        a.Keyboard.TastenEingabe.canceled += ctx => anykey = false;
 
-
+        a.Keyboard.Horizontel.performed += ctx => Horizontal = ctx.ReadValue<float>();
+        a.Keyboard.Horizontel.canceled += ctx => Horizontal = 0;
+        a.Keyboard.Verticel.performed += ctx => Vertical = ctx.ReadValue<float>();
+        a.Keyboard.Verticel.canceled += ctx => Vertical = 0;
     }
 
     
@@ -898,12 +919,20 @@ public class EZ : MonoBehaviour
         return Mouse_Delta.y;
     }
 
-
+    /// <summary>
+    /// Return the Mouse Wheel value
+    /// </summary>
+    /// <returns></returns>
     public static float MouseWheel()
     {
         return Mouse_Wheel;
     }
-
+    /// <summary>
+    /// Return the Mouse wheel value as negativ or positiv 
+    ///   -1 || 1 
+    /// down || up
+    /// </summary>
+    /// <returns></returns>
     public static float MouseWheelOneValue()
     {
         if (Mouse_Wheel > 0) return 1;
@@ -912,8 +941,36 @@ public class EZ : MonoBehaviour
     }
 
   
+   public static void setMousePosition(Vector2 pos)
+   {
+        _mouse.WarpCursorPosition(pos);
+   }
 
+    private static float T;
 
+    /// <summary>
+    /// is Mouse dopple clicket in time of clickSpeed defalte value is 0.5f
+    /// </summary>
+    /// <param name="clickSpeed"></param>
+    /// <returns></returns>
+    public static bool MouseDoppleClick(float clickSpeed = .5f)
+    {
+        T += Time.deltaTime;
+        if (T >= clickSpeed)
+        {
+            T = 0;
+            clicks = 0;
+            return false;
+        }
+        if (clicks >= 2)
+        {
+            T = 0;
+            clicks = 0;
+            return true;
+        }
+
+        return false;
+    }
     /// <summary>
     /// check for Keyboard key
     /// </summary>
@@ -930,6 +987,12 @@ public class EZ : MonoBehaviour
         }
         return false;
     }
+
+    /// <summary>
+    /// check for key by his name as string
+    /// </summary>
+    /// <param name="key">"name" z.b "w" </param>
+    /// <returns></returns>
     public static bool isKey(string key)
     {
         if (aKey != null)
@@ -962,6 +1025,12 @@ public class EZ : MonoBehaviour
         }
         return false;
     }
+
+    /// <summary>
+    /// check for Keyboard key is down by his name as sting
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public static bool isKeyDown(string key)
     {
         if (aKey != null)
@@ -1012,6 +1081,11 @@ public class EZ : MonoBehaviour
         }
         return false;
     }
+    /// <summary>
+    /// check for Keyboard key is Up by his name as string
+    /// </summary>
+    /// <param name="key"></param>
+    /// <returns></returns>
     public static bool isKeyUp(string key)
     {
         if (aKey != null)
@@ -1047,18 +1121,19 @@ public class EZ : MonoBehaviour
     {
         if (DebugMouse)
         {
-            if (isMouseDown(0)) Debug.Log("left Down");
-            if (isMouseDown(1)) Debug.Log("right Down");
-            if (isMouseDown(2)) Debug.Log("middel Down");
+                      if (isMouseDown(0)) Debug.Log("left Down");
+                      if (isMouseDown(1)) Debug.Log("right Down");
+                      if (isMouseDown(2)) Debug.Log("middel Down");
+            
+                      if (isMouse(0)) Debug.Log("leftPressed");
+                      if (isMouse(1)) Debug.Log("rightPressed");
+                      if (isMouse(2)) Debug.Log("middelPressed");
+            
+                      if (isMouseUp(0)) Debug.Log("left Up");
+                      if (isMouseUp(1)) Debug.Log("right Up");
+                      if (isMouseUp(2)) Debug.Log("middel Up");
 
-            if (isMouse(0)) Debug.Log("leftPressed");
-            if (isMouse(1)) Debug.Log("rightPressed");
-            if (isMouse(2)) Debug.Log("middelPressed");
-
-            if (isMouseUp(0)) Debug.Log("left Up");
-            if (isMouseUp(1)) Debug.Log("right Up");
-            if (isMouseUp(2)) Debug.Log("middel Up");
-
+            
             if (DebugPosition)
             {
                 Debug.Log("Mouse X = " + MousePosition().x + "  Mouse Y = " + MousePosition().y);
@@ -1076,6 +1151,7 @@ public class EZ : MonoBehaviour
         if (DebugKeyboard)
         {
             Debug.Log("Key = " + getKeyboard());
+
 
             if (isKey(debugKey)) Debug.Log(debugKey +" gedrückt");
             if (isKeyDown(debugKey)) Debug.Log(debugKey + " Down");

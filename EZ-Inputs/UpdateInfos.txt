@@ -7,3 +7,9 @@ Update infos
 5.keys können mit key. benutzt werden ohne UnityEngine.InputSystem.Key zu importieren
 6.methoden nehmen jetzt auch den key namen als string parameter
 7.Input debug methoden hinzugefügt
+
+NEW
+
+1. Mehr Mouse controlle z.b MouseDoppleClick() || setMousePosition(Vector2 pos)
+2. direktes Mouse aufrufen mit _mouse.
+3. Horizontal und Vertical inputs
