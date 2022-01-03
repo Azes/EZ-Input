@@ -8,8 +8,14 @@ Update infos
 6.methoden nehmen jetzt auch den key namen als string parameter
 7.Input debug methoden hinzugefügt
 
-NEW
+NEW 1.0.3
 
 1. Mehr Mouse controlle z.b MouseDoppleClick() || setMousePosition(Vector2 pos)
 2. direktes Mouse aufrufen mit _mouse.
 3. Horizontal und Vertical inputs
+
+New 03.01.2022 v1.0.4
+
+1. Maus position und delta und click etc sind jetzt direkt nutzbar die alten methoden bleiben aber bestehen damit man alte scripts nicht abändern muss
+2. calls sind jetzt mit switch verzweigungen das ist etwas performanter als if verzweiungen "und es sieht besser aus" 
+3. Debugs wurden erweitert für mehr kontrolle "unnötig aber übersichtlicher in der console"

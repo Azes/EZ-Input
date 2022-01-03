@@ -158,11 +158,11 @@ public class EZ : MonoBehaviour
     static bool isMouseLeft, isMouseRight, isMouseMiddel, MouseLeft_Down, MouseRight_Down, MouseMiddel_Down, MouseLeft_Up, MouseRight_Up, MouseMiddel_Up;
     public static bool MouseBack, MouseForward;
     public static Mouse _mouse;
-    static Vector2 Mouse_Position, Mouse_Delta;
-    static float Mouse_Wheel;
+    public static Vector2 Mouse_Position, Mouse_Delta;
+    public static float Mouse_Wheel;
     static bool drag;
     public static bool onMouse;
-    static int clicks;
+    public static int clicks;
 
     //Keyboard
     static Keyboard aKey;
@@ -171,7 +171,7 @@ public class EZ : MonoBehaviour
     public static bool anykey;
 
 
-    public bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false;
+    public bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false, dl = false,dr=false,dm=false,df=false,db=false;
     public Key debugKey;
     private void Awake()
     {
@@ -832,10 +832,17 @@ public class EZ : MonoBehaviour
     /// <returns></returns>
     public static bool isMouse(int index)
     {
-        if (index == 0) return isMouseLeft;
-        else if (index == 1) return isMouseRight;
-        else if (index == 2) return isMouseMiddel;
-        else return false;
+        switch (index)
+        {
+            case 0:
+                return isMouseLeft;
+            case 1:
+                return isMouseRight;
+            case 2:
+                return isMouseMiddel;
+            default:
+                return false;
+        }
     }
     /// <summary>
     /// is mouse button down
@@ -844,25 +851,25 @@ public class EZ : MonoBehaviour
     /// <returns></returns>
     public static bool isMouseDown(int index)
     {
-        if (index == 0)
+        bool i = false;
+        switch (index)
         {
-            var i = MouseLeft_Down;
-            MouseLeft_Down = false;
-            return i;
+            case 0:
+                i = MouseLeft_Down;
+                MouseLeft_Down = false;
+                return i;
+            case 1:
+                i = MouseRight_Down;
+                MouseRight_Down = false;
+                return i;
+            case 2:
+                i = MouseMiddel_Down;
+                MouseMiddel_Down = false;
+                return i;
+            default:
+                return i;
         }
-        else if (index == 1)
-        {
-            var i = MouseRight_Down;
-            MouseRight_Down = false;
-            return i;
-        }
-        else if (index == 2)
-        {
-            var i = MouseMiddel_Down;
-            MouseMiddel_Down = false;
-            return i;
-        }
-        else return false;
+
     }
     /// <summary>
     /// is mouse button up
@@ -871,25 +878,24 @@ public class EZ : MonoBehaviour
     /// <returns></returns>
     public static bool isMouseUp(int index)
     {
-        if (index == 0)
+        bool i = false;
+        switch (index)
         {
-            var i = MouseLeft_Up;
-            MouseLeft_Up = false;
-            return i;
+            case 0:
+                i = MouseLeft_Up;
+                MouseLeft_Up = false;
+                return i;
+            case 1:
+                i = MouseRight_Up;
+                MouseRight_Up = false;
+                return i;
+            case 2:
+                i = MouseMiddel_Up;
+                MouseMiddel_Up = false;
+                return i;
+            default:
+                return i;
         }
-        else if (index == 1)
-        {
-            var i = MouseRight_Up;
-            MouseRight_Up = false;
-            return i;
-        }
-        else if (index == 2)
-        {
-            var i = MouseMiddel_Up;
-            MouseMiddel_Up = false;
-            return i;
-        }
-        else return false;
     }
 
     public static Vector2 MousePosition()
@@ -1121,18 +1127,21 @@ public class EZ : MonoBehaviour
     {
         if (DebugMouse)
         {
-                      if (isMouseDown(0)) Debug.Log("left Down");
-                      if (isMouseDown(1)) Debug.Log("right Down");
-                      if (isMouseDown(2)) Debug.Log("middel Down");
-            
-                      if (isMouse(0)) Debug.Log("leftPressed");
-                      if (isMouse(1)) Debug.Log("rightPressed");
-                      if (isMouse(2)) Debug.Log("middelPressed");
-            
-                      if (isMouseUp(0)) Debug.Log("left Up");
-                      if (isMouseUp(1)) Debug.Log("right Up");
-                      if (isMouseUp(2)) Debug.Log("middel Up");
 
+            if (dl && isMouseDown(0)) Debug.Log("left Down");
+            if (dr && isMouseDown(1)) Debug.Log("right Down");
+            if (dm && isMouseDown(2)) Debug.Log("middel Down");
+
+            if (dl && isMouse(0)) Debug.Log("leftPressed");
+            if (dr && isMouse(1)) Debug.Log("rightPressed");
+            if (dm && isMouse(2)) Debug.Log("middelPressed");
+
+            if (dl && isMouseUp(0)) Debug.Log("left Up");
+            if (dr && isMouseUp(1)) Debug.Log("right Up");
+            if (dm && isMouseUp(2)) Debug.Log("middel Up");
+
+            if (db && MouseBack) Debug.Log("MouseBack");
+            if (df && MouseForward) Debug.Log("MouseForward");   
             
             if (DebugPosition)
             {
@@ -1198,8 +1207,8 @@ public class customInspecterEZ : Editor
         EditorStyles.linkLabel.fontStyle = FontStyle.Bold;
         EZ a = (EZ)target;
 
-        if (a.DebugKeyboard && a.DebugMouse) mul = 3;
-        else if (a.DebugMouse) mul = 2;
+        if (a.DebugKeyboard && a.DebugMouse) mul = 5;
+        else if (a.DebugMouse) mul = 4;
         else if (a.DebugKeyboard) mul = 1;
         else mul = 0;
 
@@ -1214,7 +1223,6 @@ public class customInspecterEZ : Editor
             a.DebugDelta = false;
         }
         EditorGUILayout.EndHorizontal();
-
 
         if (a.DebugMouse)
         {
@@ -1232,7 +1240,34 @@ public class customInspecterEZ : Editor
                 a.DebugDelta = !a.DebugDelta;
             }
             EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
             
+           
+            if (GUILayout.Button(a.dl ? "<color=lime>Left</color>" : "Left", gs))
+            {
+                a.dl = !a.dl;
+            }
+            if (GUILayout.Button(a.dm ? "<color=lime>Middel</color>" : "Middel", gs))
+            {
+                a.dm = !a.dm;
+            }
+            if (GUILayout.Button(a.dr ? "<color=lime>Right</color>" : "Right", gs))
+            {
+                a.dr = !a.dr;
+            }
+
+            EditorGUILayout.EndHorizontal();
+            EditorGUILayout.BeginHorizontal();
+
+            if (GUILayout.Button(a.df ? "<color=lime>Forward</color>" : "Forward", gs))
+            {
+                a.df = !a.df;
+            }
+            if (GUILayout.Button(a.db ? "<color=lime>Back</color>" : "Back", gs))
+            {
+                a.db = !a.db;
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         EditorGUILayout.BeginHorizontal();
