@@ -163,6 +163,7 @@ public class EZ : MonoBehaviour
     static bool drag;
     public static bool onMouse;
     public static int clicks;
+    static GameObject enterbuff, overbuff, lastbuff;
 
     //Keyboard
     static Keyboard aKey;
@@ -286,6 +287,10 @@ public class EZ : MonoBehaviour
         a.Mouse.MiddelButton.canceled += ctx => MouseMiddel_Up = true;
 
         a.Mouse.Position.performed += ctx => Mouse_Position = ctx.ReadValue<Vector2>();
+        a.Mouse.Position.performed += ctx => getOverObject();
+        a.Mouse.Position.started += ctx => getOverObject();
+        a.Mouse.Position.canceled += ctx => getOverObject();
+
         a.Mouse.Delta.performed += ctx => Mouse_Delta = ctx.ReadValue<Vector2>();
         a.Mouse.Delta.canceled += ctx => Mouse_Delta = Vector2.zero;
 
@@ -313,8 +318,52 @@ public class EZ : MonoBehaviour
         a.Keyboard.Verticel.performed += ctx => Vertical = ctx.ReadValue<float>();
         a.Keyboard.Verticel.canceled += ctx => Vertical = 0;
     }
+    static bool enter,exit,over;
+
+    static void getOverObject()
+    {
+        RaycastHit hit;
+        if (Physics.Raycast(Camera.main.ScreenPointToRay(Mouse_Position), out hit))
+        {
+
+            enterbuff = hit.collider.gameObject;
+
+        }
+        else enterbuff = null;
+    }
 
     
+    public static bool isMouseEnter(GameObject g)
+    {
+        
+        if(g == enterbuff && !enter)
+        {
+            enter = true;
+            lastbuff = g;
+            return true;
+        }
+        return false;
+    }
+
+    public static bool isMouseExit(GameObject g)
+    {
+        if(g == lastbuff && enterbuff != g && enter)
+        {
+            enter = false;
+            return true;
+        }
+        return false;
+    }
+
+    public static bool isMouseOver(GameObject g)
+    {
+
+        if (g == enterbuff)
+        {
+            return true;
+        }
+        return false;
+    }
 
     public static bool A_ButtonDown(int index)
     {
