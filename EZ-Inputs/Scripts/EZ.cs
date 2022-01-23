@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.LowLevel;
+using UnityEngine.InputSystem.Utilities;
 
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
-public static class key
+public static class e
 {
     public static Key A = Key.A;
     public static Key B = Key.B;
@@ -131,7 +133,16 @@ public static class key
     public static Key tab = Key.Tab;
 }
 
-public class EZ : MonoBehaviour
+
+public class EZMONO : MonoBehaviour
+{
+    private void Awake()
+    {
+        DontDestroyOnLoad(gameObject);
+    }
+}
+
+public class EZ 
 {
 
     /*
@@ -140,11 +151,11 @@ public class EZ : MonoBehaviour
      * written by AzeS 
      * v 1.3
      */
-    AzeSCon a;
+    static AzeSCon a;
 
 
 
-    //Controller Var�s
+    //Controller Var´s
     static bool A_Pressed, X_Pressed, B_Pressed, Y_Pressed, LB_Pressed, RB_Pressed, LT_Pressed, RT_Pressed, L3_Pressed, R3_Pressed, Up_Pressed, Down_Pressed, left_Pressed, right_Pressed, select_Pressed, start_Pressed;
     static bool A_Down, X_Down, B_Down, Y_Down, LB_Down, RB_Down, LT_Down, RT_Down, L3_Down, R3_Down, Up_Down, Down_Down, left_Down, right_Down, select_Down, start_Down;
     static bool A_up, X_up, B_up, Y_up, LB_up, RB_up, LT_up, RT_up, L3_up, R3_up, Up_up, Down_up, left_up, right_up, select_up, start_up;
@@ -152,9 +163,7 @@ public class EZ : MonoBehaviour
     static Vector2 LS, RS, arrows;
 
 
-
-
-    //Mouse Var�s
+    //Mouse Var´s
     static bool isMouseLeft, isMouseRight, isMouseMiddel, MouseLeft_Down, MouseRight_Down, MouseMiddel_Down, MouseLeft_Up, MouseRight_Up, MouseMiddel_Up;
     public static bool MouseBack, MouseForward;
     public static Mouse _mouse;
@@ -164,7 +173,9 @@ public class EZ : MonoBehaviour
     public static bool onMouse;
     public static int clicks;
     static GameObject enterbuff, overbuff, lastbuff;
-
+    public static bool controllerCursor = false;
+    public static int controllerCursorControllerIndex = 1;
+    public static float controllerCursorMoveSpeed = 55;
     //Keyboard
     static Keyboard aKey;
     static bool kdown, kup;
@@ -172,16 +183,19 @@ public class EZ : MonoBehaviour
     public static bool anykey;
 
 
-    public bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false, dl = false,dr=false,dm=false,df=false,db=false;
-    public Key debugKey;
-    private void Awake()
-    {
+    public static bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false, dl = false,dr=false,dm=false,df=false,db=false;
+    public static Key debugKey;
 
-        DontDestroyOnLoad(gameObject);
+
+    [RuntimeInitializeOnLoadMethod]
+    static void Onwake()
+    {
+        
+        
         a = new AzeSCon();
         a.Enable();
 
-
+        
         a.Controller.A.performed += ctx => A_Pressed = true;
         a.Controller.A.canceled += ctx => A_Pressed = false;
         a.Controller.A.started += ctx => A_Down = true;
@@ -305,8 +319,8 @@ public class EZ : MonoBehaviour
         a.Mouse.back.performed += ctx => MouseBack = true;
         a.Mouse.back.canceled += ctx => MouseBack = false;
 
+        
         _mouse = Mouse.current;
-
         a.Keyboard.TastenEingabe.performed += ctx => aKey = Keyboard.current;
         a.Keyboard.TastenEingabe.performed += ctx => anykey = true;
         a.Keyboard.TastenEingabe.started += ctx => kdown = true;
@@ -317,25 +331,183 @@ public class EZ : MonoBehaviour
         a.Keyboard.Horizontel.canceled += ctx => Horizontal = 0;
         a.Keyboard.Verticel.performed += ctx => Vertical = ctx.ReadValue<float>();
         a.Keyboard.Verticel.canceled += ctx => Vertical = 0;
+
+        GameObject g = new GameObject("EZ-Inputs");
+        g.transform.SetAsFirstSibling();
+        var e = g.AddComponent<EZMONO>();
+        e.StartCoroutine(update());
+
+
     }
-    static bool enter,exit,over;
+    static bool enter;
+    static Camera c;
 
     static void getOverObject()
     {
         RaycastHit hit;
-        if (Physics.Raycast(Camera.main.ScreenPointToRay(Mouse_Position), out hit))
+
+        if (c == null) c = Camera.main;
+        if (c == null) c = Camera.current;
+
+        if (Physics.Raycast(c.ScreenPointToRay(Mouse_Position), out hit))
         {
-
             enterbuff = hit.collider.gameObject;
-
         }
         else enterbuff = null;
+        
     }
 
+   
+
+    /// <summary>
+    /// sent a fake mouse klick from player´s device
+    /// index :
+    /// 0 = left
+    /// 1 = right
+    /// 2 = middel
+    /// 3 = forward
+    /// 4 = back
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool GhostClick(int index = 0)
+    {
+        if (index == 0)
+        {
+            _mouse.leftButton.QueueValueChange<float>(1);
+            if (_mouse.leftButton.isPressed) return true;
+        }
+        else if (index == 1)
+        {
+            _mouse.rightButton.QueueValueChange<float>(1);
+            if (_mouse.rightButton.isPressed) return true;
+        }
+        else if (index == 2)
+        {
+            _mouse.middleButton.QueueValueChange<float>(1);
+            if (_mouse.middleButton.isPressed) return true;
+        }
+        else if (index == 3)
+        {
+            _mouse.forwardButton.QueueValueChange<float>(1);
+            if (_mouse.forwardButton.isPressed) return true;
+
+        }
+        else if (index == 4)
+        {
+            _mouse.backButton.QueueValueChange<float>(1);
+            if (_mouse.backButton.isPressed) return true;
+
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// sent a fake mouse click at screen position from player´s device
+    /// index :
+    /// 0 = left
+    /// 1 = right
+    /// 2 = middel
+    /// 3 = forward
+    /// 4 = back
+    /// </summary>
+    /// <param name="index"></param>
+    /// <returns></returns>
+    public static bool GhostClickAtPosition(int index, float x, float y)
+    {
+        MouseState button = new MouseState();
+        Vector2 pos = new Vector2(x, y);
+
+        if (index == 0)
+        {
+            button = button.WithButton(MouseButton.Left, true);
+            InputSystem.QueueStateEvent<MouseState>(_mouse, button);
+
+            _mouse.WarpCursorPosition(pos);
+            _mouse.leftButton.QueueValueChange<float>(1);
+            if (_mouse.leftButton.isPressed) return true;
+        }
+        else if (index == 1)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.rightButton.QueueValueChange<float>(1);
+            if (_mouse.rightButton.isPressed) return true;
+        }
+        else if (index == 2)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.middleButton.QueueValueChange<float>(1);
+            if (_mouse.middleButton.isPressed) return true;
+        }
+        else if (index == 3)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.forwardButton.QueueValueChange<float>(1);
+            if (_mouse.forwardButton.isPressed) return true;
+
+        }
+        else if (index == 4)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.backButton.QueueValueChange<float>(1);
+            if (_mouse.backButton.isPressed) return true;
+
+        }
+        return false;
+    }
+    /// <summary>
+     /// sent a fake mouse click at screen position from player´s device
+     /// index :
+     /// 0 = left
+     /// 1 = right
+     /// 2 = middel
+     /// 3 = forward
+     /// 4 = back
+     /// </summary>
+     /// <param name="index"></param>
+     /// <returns></returns>
+    public static bool GhostClickAtPosition(int index, Vector2 pos)
+    {
+        
+        if (index == 0)
+        {
+            Debug.Log("Mouse");
+            Mouse.current.WarpCursorPosition(pos);
+            _mouse.leftButton.QueueValueChange<float>(1); 
+           
+            if (_mouse.leftButton.isPressed) return true;
+        }
+        else if (index == 1)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.rightButton.QueueValueChange<float>(1);
+            if (_mouse.rightButton.isPressed) return true;
+        }
+        else if (index == 2)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.middleButton.QueueValueChange<float>(1);
+            if (_mouse.middleButton.isPressed) return true;
+        }
+        else if (index == 3)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.forwardButton.QueueValueChange<float>(1);
+            if (_mouse.forwardButton.isPressed) return true;
+
+        }
+        else if (index == 4)
+        {
+            _mouse.WarpCursorPosition(pos);
+            _mouse.backButton.QueueValueChange<float>(1);
+            if (_mouse.backButton.isPressed) return true;
+
+        }
+        return false;
+    }
     
     public static bool isMouseEnter(GameObject g)
     {
-        
         if(g == enterbuff && !enter)
         {
             enter = true;
@@ -358,13 +530,11 @@ public class EZ : MonoBehaviour
     public static bool isMouseOver(GameObject g)
     {
 
-        if (g == enterbuff)
-        {
-            return true;
-        }
+        if (g == enterbuff) return true;
         return false;
     }
 
+    #region
     public static bool A_ButtonDown(int index)
     {
         if (Gamepad.current == Gamepad.all[index - 1])
@@ -700,10 +870,31 @@ public class EZ : MonoBehaviour
         if (Gamepad.current == Gamepad.all[index - 1]) return RS;
         else return Vector2.zero;
     }
+    public static Vector2 RightStick(int index, Vector2 minInput)
+    {
+        if (Gamepad.current == Gamepad.all[index - 1])
+        {
+            var x = Mathf.Abs(RS.x);
+            var y = Mathf.Abs(RS.y);
+            if(x >= minInput.x && y >= minInput.y)return RS;
+        }
+        
+        return Vector2.zero;
+    }
     public static Vector2 LeftStick(int index)
     {
         if (Gamepad.current == Gamepad.all[index - 1]) return LS;
         else return Vector2.zero;
+    }
+    public static Vector2 LeftStick(int index, Vector2 minInput)
+    {
+        if (Gamepad.current == Gamepad.all[index - 1])
+        {
+            var x = Mathf.Abs(LS.x);
+            var y = Mathf.Abs(LS.y);
+            if (x >= minInput.x && y >= minInput.y) return LS;
+        }
+        return Vector2.zero;
     }
     public static float RawXRight(int index)
     {
@@ -873,7 +1064,9 @@ public class EZ : MonoBehaviour
         else return false;
     }
 
+    #endregion
 
+    #region
     /// <summary>
     /// Is mouse button pressed
     /// </summary>
@@ -1171,9 +1364,43 @@ public class EZ : MonoBehaviour
         }
         return "null";
     }
-
-    private void Update()
+#endregion
+    public static  IEnumerator update()
     {
+        Debug.Log("EZ-Input Debug update running");
+        while (Application.isPlaying)
+        {
+            Update(); 
+            if (controllerCursor) contCurs();
+            yield return new WaitForEndOfFrame();
+            if (controllerCursor) contCurs();
+        }
+
+        yield return null;
+    }
+
+    static bool tapOut;
+    static void contCurs()
+    {
+        if (isKeyDown(e.escape)) tapOut = true;
+        if (tapOut && A_ButtonDown(controllerCursorControllerIndex)) tapOut = false;
+
+        if (!tapOut)
+        {
+            setMousePosition(Mouse_Position + (LeftStick(controllerCursorControllerIndex) * (controllerCursorMoveSpeed * 10)) * Time.deltaTime);
+
+            if (A_ButtonDown(controllerCursorControllerIndex)) GhostClick(0);
+            if (B_ButtonDown(controllerCursorControllerIndex)) GhostClick(1);
+            if (Y_ButtonDown(controllerCursorControllerIndex)) GhostClick(2);
+        }
+        
+    }
+
+    static void Update()
+    {
+
+        
+
         if (DebugMouse)
         {
 
@@ -1211,7 +1438,7 @@ public class EZ : MonoBehaviour
             Debug.Log("Key = " + getKeyboard());
 
 
-            if (isKey(debugKey)) Debug.Log(debugKey +" gedr�ckt");
+            if (isKey(debugKey)) Debug.Log(debugKey +" gedrückt");
             if (isKeyDown(debugKey)) Debug.Log(debugKey + " Down");
             if (isKeyUp(debugKey)) Debug.Log(debugKey + " Up");
 
@@ -1224,7 +1451,7 @@ public class EZ : MonoBehaviour
 }
 
 #if UNITY_EDITOR
-[CustomEditor(typeof(EZ))]
+[CustomEditor(typeof(EZMONO))]
 public class customInspecterEZ : Editor
 {
     Texture2D icon,back,yt;
@@ -1254,85 +1481,84 @@ public class customInspecterEZ : Editor
         EditorStyles.label.fontStyle = FontStyle.Bold;
         EditorStyles.linkLabel.richText = true;
         EditorStyles.linkLabel.fontStyle = FontStyle.Bold;
-        EZ a = (EZ)target;
-
-        if (a.DebugKeyboard && a.DebugMouse) mul = 5;
-        else if (a.DebugMouse) mul = 4;
-        else if (a.DebugKeyboard) mul = 1;
+        
+        if (EZ.DebugKeyboard && EZ.DebugMouse) mul = 5;
+        else if (EZ.DebugMouse) mul = 4;
+        else if (EZ.DebugKeyboard) mul = 1;
         else mul = 0;
 
         EditorGUI.DrawRect(new Rect(5, 5, 200, EditorGUIUtility.singleLineHeight * (3 + mul)), new Color(1, 1, 1, 0.5f));
 
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField(a.DebugMouse ? "<color=Black> Debug Mouse Inputs</color>" : "<color=grey> Debug Mouse Inputs</color>");
-        if (GUILayout.Button(a.DebugMouse ? "<color=lime>Its Active</color>" : "Not Active", gs))
+        EditorGUILayout.LabelField(EZ.DebugMouse ? "<color=Black> Debug Mouse Inputs</color>" : "<color=grey> Debug Mouse Inputs<///lor>");
+        if (GUILayout.Button(EZ.DebugMouse ? "<color=lime>Its Active</color>" : "Not Active", gs))
         {
-            a.DebugMouse = !a.DebugMouse;
-            a.DebugPosition = false;
-            a.DebugDelta = false;
+           EZ.DebugMouse = !EZ.DebugMouse;
+           EZ.DebugPosition = false;
+           EZ.DebugDelta = false;
         }
         EditorGUILayout.EndHorizontal();
 
-        if (a.DebugMouse)
+        if (EZ.DebugMouse)
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(a.DebugPosition ? "<color=Black> Debug Mouse Position</color>" : "<color=grey> Debug Mouse Position</color>");
-            if (GUILayout.Button(a.DebugPosition ? "<color=lime>ON</color>" : "OFF", gs))
+            EditorGUILayout.LabelField(EZ.DebugPosition ? "<color=Black> Debug Mouse Position</color>" : "<color=grey> Debug Mouse Position</color>");
+            if (GUILayout.Button(EZ.DebugPosition ? "<color=lime>ON</color>" : "OFF", gs))
             {
-                a.DebugPosition = !a.DebugPosition;
+                EZ.DebugPosition = !EZ.DebugPosition;
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(a.DebugDelta ? "<color=Black> Debug Mouse Delta</color>" : "<color=grey> Debug Mouse Delta</color>");
-            if (GUILayout.Button(a.DebugDelta ? "<color=lime>ON</color>" : "OFF",gs))
+            EditorGUILayout.LabelField(EZ.DebugDelta ? "<color=Black> Debug Mouse Delta</color>" : "<color=grey> Debug Mouse Delta</color>");
+            if (GUILayout.Button(EZ.DebugDelta ? "<color=lime>ON</color>" : "OFF",gs))
             {
-                a.DebugDelta = !a.DebugDelta;
+                EZ.DebugDelta = !EZ.DebugDelta;
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
             
            
-            if (GUILayout.Button(a.dl ? "<color=lime>Left</color>" : "Left", gs))
+            if (GUILayout.Button(EZ.dl ? "<color=lime>Left</color>" : "Left", gs))
             {
-                a.dl = !a.dl;
+                EZ.dl = !EZ.dl;
             }
-            if (GUILayout.Button(a.dm ? "<color=lime>Middel</color>" : "Middel", gs))
+            if (GUILayout.Button(EZ.dm ? "<color=lime>Middel</color>" : "Middel", gs))
             {
-                a.dm = !a.dm;
+                EZ.dm = !EZ.dm;
             }
-            if (GUILayout.Button(a.dr ? "<color=lime>Right</color>" : "Right", gs))
+            if (GUILayout.Button(EZ.dr ? "<color=lime>Right</color>" : "Right", gs))
             {
-                a.dr = !a.dr;
+                EZ.dr = !EZ.dr;
             }
 
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
 
-            if (GUILayout.Button(a.df ? "<color=lime>Forward</color>" : "Forward", gs))
+            if (GUILayout.Button(EZ.df ? "<color=lime>Forward</color>" : "Forward", gs))
             {
-                a.df = !a.df;
+                EZ.df = !EZ.df;
             }
-            if (GUILayout.Button(a.db ? "<color=lime>Back</color>" : "Back", gs))
+            if (GUILayout.Button(EZ.db ? "<color=lime>Back</color>" : "Back", gs))
             {
-                a.db = !a.db;
+                EZ.db = !EZ.db;
             }
             EditorGUILayout.EndHorizontal();
         }
 
         EditorGUILayout.BeginHorizontal();
-        EditorGUILayout.LabelField(a.DebugKeyboard ? "<color=black> Debug Keyboard Inputs</color>" : "<color=grey> Debug Keyborad Inputs</color>");
-        if (GUILayout.Button(a.DebugKeyboard ? "<color=lime>Its Active</color>" : "Not Active",gs))
+        EditorGUILayout.LabelField(EZ.DebugKeyboard ? "<color=black> Debug Keyboard Inputs</color>" : "<color=grey> Debug Keyborad Inputs</color>");
+        if (GUILayout.Button(EZ.DebugKeyboard ? "<color=lime>Its Active</color>" : "Not Active",gs))
         {
-            a.DebugKeyboard = !a.DebugKeyboard;
-            a.debugKey = Key.None;
+            EZ.DebugKeyboard = !EZ.DebugKeyboard;
+            EZ.debugKey = Key.None;
         }
         EditorGUILayout.EndHorizontal();
 
-        if (a.DebugKeyboard)
+        if (EZ.DebugKeyboard)
         {
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField("<color=black> Debug Key </color>");
-            a.debugKey = (Key)EditorGUILayout.EnumPopup(a.debugKey);
+            EZ.debugKey = (Key)EditorGUILayout.EnumPopup(EZ.debugKey);
             EditorGUILayout.EndHorizontal();
 
         }
@@ -1344,8 +1570,8 @@ public class customInspecterEZ : Editor
         cs.padding.top = 0;
         cs.padding.bottom = 0;
         
-        if (GUI.Button(new Rect(5, (EditorGUIUtility.singleLineHeight * (4 + mul)), 25, 25), yt,cs)) Application.OpenURL("https://www.youtube.com/AzeS_YT");
-        if (EditorGUI.LinkButton(new Rect(30, (EditorGUIUtility.singleLineHeight * (4 + mul)), 100, 25),"<color=black>AzeS</color> <color=red>Youtube</color>")) Application.OpenURL("https://www.youtube.com/AzeS_YT");
+        if (GUI.Button(new Rect(5, (EditorGUIUtility.singleLineHeight * (4 + mul)), 25, 25), yt,cs)) Application.OpenURL("https:////ww.youtube.com/AzeS_YT");
+        if (EditorGUI.LinkButton(new Rect(30, (EditorGUIUtility.singleLineHeight * (4 + mul)), 100, 25),"<color=black>AzeS</olor> //color=red>Youtube</color>")) Application.OpenURL("https://www.youtube.com/AzeS_YT");
 
 
         GUILayout.Space(60);
@@ -1384,7 +1610,7 @@ class MyHierarchyIcons
 
         if (go != null)
         {
-            if (go.GetComponent<EZ>() != null)
+            if (go.GetComponent<EZMONO>() != null)
             {
                 EditorGUI.DrawRect(selectionRect, new Color32(56, 56, 56, 255)); 
                 
