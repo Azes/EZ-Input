@@ -177,11 +177,11 @@ public class EZ
     public static int controllerCursorControllerIndex = 1;
     public static float controllerCursorMoveSpeed = 55;
     //Keyboard
-    static Keyboard aKey;
+    static Keyboard aKey,bKey,cKey;
     static bool kdown, kup;
     public static float Horizontal, Vertical;
     public static bool anykey;
-
+    static KeyControl bufferkey;
 
     public static bool DebugMouse = false, DebugPosition = false, DebugDelta = false, DebugKeyboard = false, dl = false,dr=false,dm=false,df=false,db=false;
     public static Key debugKey;
@@ -322,10 +322,12 @@ public class EZ
         
         _mouse = Mouse.current;
         a.Keyboard.TastenEingabe.performed += ctx => aKey = Keyboard.current;
-        a.Keyboard.TastenEingabe.performed += ctx => anykey = true;
+        a.Keyboard.TastenEingabe.performed += ctx => setBufferKey();
+       a.Keyboard.TastenEingabe.performed += ctx => anykey = true;
         a.Keyboard.TastenEingabe.started += ctx => kdown = true;
         a.Keyboard.TastenEingabe.canceled += ctx => kup = true;
         a.Keyboard.TastenEingabe.canceled += ctx => anykey = false;
+
 
         a.Keyboard.Horizontel.performed += ctx => Horizontal = ctx.ReadValue<float>();
         a.Keyboard.Horizontel.canceled += ctx => Horizontal = 0;
@@ -339,6 +341,19 @@ public class EZ
 
 
     }
+
+    static void setBufferKey()
+    {
+        foreach(KeyControl k in aKey.allKeys)
+        {
+            if (k.isPressed && k.wasPressedThisFrame)
+            {
+                kdown = true;
+                bufferkey = k;
+            }
+        }
+    }
+
     static bool enter;
     static Camera c;
 
@@ -1264,9 +1279,11 @@ public class EZ
         {
             foreach (KeyControl k in aKey.allKeys)
             {
-                if (k.wasPressedThisFrame) if (k.keyCode == key) if (kdown)
+                 if (k.wasPressedThisFrame && k.keyCode == key)
+                    if (kdown)
                         {
                             kdown = false;
+                            Debug.Log("down");
                             return true;
                         }
             }
